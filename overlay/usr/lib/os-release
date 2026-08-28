@@ -1,0 +1,11 @@
+PRETTY_NAME="FWOS"
+NAME="FWOS"
+ID=fwos
+ID_LIKE=fedora
+VERSION_ID="44"
+VARIANT="Appliance"
+VARIANT_ID=appliance
+HOME_URL="https://github.com/coldboot-labs/fwos"
+DOCUMENTATION_URL="https://github.com/coldboot-labs/fwos"
+SUPPORT_URL="https://github.com/coldboot-labs/fwos/issues"
+BUG_REPORT_URL="https://github.com/coldboot-labs/fwos/issues"

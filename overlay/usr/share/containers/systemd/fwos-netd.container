@@ -8,7 +8,8 @@ Rootfs=/usr/lib/fwos/addons/netd:O
 Exec=/usr/bin/netd
 Network=ns:/run/netns/fwd
 Volume=/var/lib/fwos:/var/lib/fwos
-AddCapability=NET_ADMIN
+Volume=/proc/1/ns/net:/run/host-netns
+AddCapability=NET_ADMIN SYS_ADMIN CHOWN
 DropCapability=ALL
 PodmanArgs=--runtime=/usr/bin/crun
 SecurityLabelDisable=true

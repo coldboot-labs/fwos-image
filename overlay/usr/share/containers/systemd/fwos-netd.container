@@ -1,7 +1,8 @@
 [Unit]
 Description=FWOS netd
 Requires=fwos-fwd-setup.service
-After=fwos-fwd-setup.service systemd-tmpfiles-setup.service
+After=fwos-fwd-setup.service systemd-tmpfiles-setup.service network-online.target
+Wants=network-online.target
 
 [Container]
 Rootfs=/usr/lib/fwos/addons/netd:O
@@ -9,6 +10,7 @@ Exec=/usr/bin/netd
 Network=ns:/run/netns/fwd
 Volume=/var/lib/fwos:/var/lib/fwos
 Volume=/proc/1/ns/net:/run/host-netns
+Volume=/run/netns:/run/netns
 AddCapability=NET_ADMIN SYS_ADMIN CHOWN
 DropCapability=ALL
 PodmanArgs=--runtime=/usr/bin/crun

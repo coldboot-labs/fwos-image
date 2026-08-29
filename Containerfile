@@ -8,6 +8,7 @@ COPY overlay/usr/ /usr/
 
 RUN chmod 755 /usr/bin/fwos-fwd-setup \
     && chmod 755 /usr/lib/fwos/addons/netd/usr/bin/netd \
-    && printf '%%wheel ALL=(root) NOPASSWD: /usr/sbin/ip, /usr/bin/ip\n' > /etc/sudoers.d/fwos-ip \
+    && chmod 755 /usr/libexec/fwos-sshd-mgmt /usr/libexec/fwos-sshd-mgmt-wait \
+    && printf '%%wheel ALL=(root) NOPASSWD: /usr/sbin/ip, /usr/bin/ip, /usr/bin/nsenter\n' > /etc/sudoers.d/fwos-ip \
     && chmod 440 /etc/sudoers.d/fwos-ip \
     && ostree container commit

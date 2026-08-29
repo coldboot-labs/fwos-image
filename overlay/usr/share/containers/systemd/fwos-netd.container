@@ -1,0 +1,21 @@
+[Unit]
+Description=FWOS netd
+Requires=fwos-fwd-setup.service
+After=fwos-fwd-setup.service systemd-tmpfiles-setup.service
+
+[Container]
+Rootfs=/usr/lib/fwos/addons/netd:O
+Exec=/usr/bin/netd
+Network=ns:/run/netns/fwd
+Volume=/var/lib/fwos:/var/lib/fwos
+AddCapability=NET_ADMIN
+DropCapability=ALL
+PodmanArgs=--runtime=/usr/bin/crun
+SecurityLabelDisable=true
+User=0
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

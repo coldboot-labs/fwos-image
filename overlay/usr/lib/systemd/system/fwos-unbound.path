@@ -1,0 +1,8 @@
+[Unit]
+Description=Start Unbound when netd writes its config
+
+[Path]
+PathExists=/var/lib/fwos/unbound/unbound.conf
+
+[Install]
+WantedBy=multi-user.target

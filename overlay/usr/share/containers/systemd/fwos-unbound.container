@@ -1,0 +1,19 @@
+[Unit]
+Description=FWOS Unbound
+Requires=fwos-fwd-setup.service
+After=fwos-fwd-setup.service systemd-tmpfiles-setup.service
+ConditionPathExists=/var/lib/fwos/unbound/unbound.conf
+
+[Container]
+Rootfs=/usr/lib/fwos/addons/unbound:O
+Exec=/usr/sbin/unbound -d -c /etc/unbound/unbound.conf
+Network=ns:/run/netns/fwd
+Volume=/var/lib/fwos/unbound:/etc/unbound
+AddCapability=NET_BIND_SERVICE
+DropCapability=ALL
+PodmanArgs=--runtime=/usr/bin/crun
+SecurityLabelDisable=true
+User=0
+
+[Service]
+Restart=on-failure

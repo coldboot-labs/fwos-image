@@ -1,0 +1,10 @@
+#!/bin/bash
+while true; do
+  if [ -f /var/lib/fwos/kea/kea-dhcp4.conf ]; then
+    sleep 1
+    systemctl reset-failed fwos-kea-dhcp4.service fwos-kea-dhcp6.service fwos-unbound.service 2>/dev/null || true
+    systemctl start fwos-kea-dhcp4.service fwos-kea-dhcp6.service fwos-unbound.service
+    exit 0
+  fi
+  sleep 0.2
+done

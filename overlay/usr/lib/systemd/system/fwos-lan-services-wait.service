@@ -1,0 +1,12 @@
+[Unit]
+Description=Start Kea and Unbound when netd writes DHCP config
+Requires=fwos-fwd-setup.service
+After=fwos-fwd-setup.service systemd-tmpfiles-setup.service
+
+[Service]
+Type=simple
+Restart=no
+ExecStart=/usr/libexec/fwos-lan-services-wait
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+[Unit]
+Description=Start Kea DHCPv6 when netd writes its config
+
+[Path]
+PathExists=/var/lib/fwos/kea/kea-dhcp6.conf
+
+[Install]
+WantedBy=multi-user.target

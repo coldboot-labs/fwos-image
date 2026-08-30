@@ -7,6 +7,7 @@ FROM localhost/fwos-unbound:dev AS unbound
 FROM quay.io/fedora/fedora-bootc:44
 
 COPY --from=fwd-setup /usr/bin/fwos-fwd-setup /usr/bin/fwos-fwd-setup
+COPY --from=fwd-setup /usr/bin/fwos /usr/bin/fwos
 COPY --from=netd / /usr/lib/fwos/addons/netd
 COPY --from=cli / /usr/lib/fwos/addons/cli
 COPY --from=ui / /usr/lib/fwos/addons/ui
@@ -15,6 +16,7 @@ COPY --from=unbound / /usr/lib/fwos/addons/unbound
 COPY overlay/usr/ /usr/
 
 RUN chmod 755 /usr/bin/fwos-fwd-setup \
+    && chmod 755 /usr/bin/fwos \
     && chmod 755 /usr/lib/fwos/addons/netd/usr/bin/netd \
     && chmod 755 /usr/lib/fwos/addons/cli/usr/bin/fwos \
     && chmod 755 /usr/lib/fwos/addons/ui/usr/bin/fwos-ui \

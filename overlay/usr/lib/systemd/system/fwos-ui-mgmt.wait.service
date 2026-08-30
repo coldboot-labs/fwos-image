@@ -1,0 +1,12 @@
+[Unit]
+Description=Move the FWOS UI into mgmt after Bootstrap
+Requires=fwos-fwd-setup.service
+After=fwos-fwd-setup.service systemd-tmpfiles-setup.service
+
+[Service]
+Type=simple
+Restart=no
+ExecStart=/usr/libexec/fwos-ui-mgmt-wait
+
+[Install]
+WantedBy=multi-user.target

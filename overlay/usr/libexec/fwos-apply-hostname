@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+name=$(tr -d '\n' </var/lib/fwos/hostname)
+[ -n "$name" ]
+hostnamectl set-hostname "$name" || hostname "$name"

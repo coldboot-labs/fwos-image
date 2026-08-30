@@ -1,0 +1,9 @@
+[Unit]
+Description=Apply FWOS hostname from /var
+
+[Path]
+PathExists=/var/lib/fwos/hostname
+PathModified=/var/lib/fwos/hostname
+
+[Install]
+WantedBy=multi-user.target

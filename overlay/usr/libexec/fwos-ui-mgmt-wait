@@ -1,0 +1,10 @@
+#!/bin/bash
+while true; do
+  if [ -f /var/lib/fwos/bootstrapped ]; then
+    systemctl stop fwos-ui-host.service 2>/dev/null || true
+    systemctl reset-failed fwos-ui-mgmt.service 2>/dev/null || true
+    systemctl start fwos-ui-mgmt.service
+    exit 0
+  fi
+  sleep 0.2
+done

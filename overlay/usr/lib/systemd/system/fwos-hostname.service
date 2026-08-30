@@ -1,0 +1,8 @@
+[Unit]
+Description=Set the FWOS hostname
+After=fwos-fwd-setup.service
+ConditionPathExists=/var/lib/fwos/hostname
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fwos-apply-hostname

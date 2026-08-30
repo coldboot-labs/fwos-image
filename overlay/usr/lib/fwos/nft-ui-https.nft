@@ -1,0 +1,7 @@
+# Accept UI HTTPS in the Host netns before any later drop policy.
+table inet fwos_ui {
+	chain input {
+		type filter hook input priority -150; policy accept;
+		tcp dport 443 accept
+	}
+}

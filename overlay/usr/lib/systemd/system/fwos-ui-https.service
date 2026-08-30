@@ -1,0 +1,13 @@
+[Unit]
+Description=Accept HTTPS for the FWOS UI
+DefaultDependencies=no
+After=local-fs.target
+Before=network-pre.target fwos-ui-host.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /usr/lib/fwos/nft-ui-https.nft
+
+[Install]
+WantedBy=multi-user.target

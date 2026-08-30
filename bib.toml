@@ -1,0 +1,2 @@
+# Published Disk image (ADR-0024, ADR-0028): no injected SSH key, no default password.
+[customizations]

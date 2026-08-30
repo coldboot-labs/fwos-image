@@ -5,6 +5,7 @@ Host image: Fedora bootc remix plus overlay and branding. Not Workstation toolin
 ```
 Containerfile          # FROM fedora-bootc, overlay, ostree commit, embedded netd rootfs
 overlay/usr/           # os-release branding, Quadlets, tmpfiles
+bib.toml               # published Disk image customizations (no users, no SSH key)
 ```
 
 Build the container with Workstation tooling (`fwos-dev`), not by installing onto a Workstation disk.

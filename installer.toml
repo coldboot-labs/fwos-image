@@ -1,0 +1,70 @@
+# Installer ISO (ADR-0017, ADR-0021, ADR-0025): UEFI, whole-disk, self-contained.
+# ostreecontainer is added by bootc-image-builder (embedded Host image, no registry).
+[customizations.installer.modules]
+disable = [
+  "org.fedoraproject.Anaconda.Modules.Users",
+  "org.fedoraproject.Anaconda.Modules.Subscription",
+]
+
+[customizations.installer.kickstart]
+contents = '''
+text
+lang en_US.UTF-8
+keyboard us
+timezone UTC --utc
+rootpw --lock
+firstboot --disable
+poweroff
+%include /tmp/fwos-disk.ks
+
+%pre --erroronfail --interpreter=/bin/bash --log=/tmp/fwos-pre.log
+set -euo pipefail
+disks=()
+while read -r name type ro rm; do
+  case "$name" in
+    zram*|loop*|ram*|sr*) continue ;;
+  esac
+  if [ "$type" = disk ] && [ "$ro" = 0 ] && [ "$rm" != 1 ]; then
+    disks+=("$name")
+  fi
+done < <(lsblk -dn -o NAME,TYPE,RO,RM)
+n=${#disks[@]}
+if [ "$n" -eq 0 ]; then
+  echo "FWOS Installer: no writable disk" > /dev/console
+  exit 1
+fi
+pick=""
+if [ "$n" -eq 1 ]; then
+  pick="${disks[0]}"
+else
+  exec </dev/console >/dev/console 2>/dev/console
+  echo "FWOS Installer: pick a disk to wipe"
+  echo "The chosen disk is always wiped."
+  i=1
+  for d in "${disks[@]}"; do
+    sz=$(lsblk -dn -o SIZE "/dev/$d" 2>/dev/null || echo "?")
+    echo "  $i) /dev/$d ($sz)"
+    i=$((i + 1))
+  done
+  while true; do
+    echo -n "Disk number: "
+    read -r num || true
+    case "$num" in
+      ''|*[!0-9]*) continue ;;
+    esac
+    if [ "$num" -ge 1 ] && [ "$num" -le "$n" ]; then
+      pick="${disks[$((num - 1))]}"
+      break
+    fi
+  done
+fi
+cat > /tmp/fwos-disk.ks <<EOF
+ignoredisk --only-use=${pick}
+zerombr
+clearpart --all --initlabel --disklabel=gpt
+reqpart --add-boot
+part / --grow --fstype=ext4
+bootloader --boot-drive=${pick}
+EOF
+%end
+'''

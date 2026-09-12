@@ -1,7 +1,8 @@
 [Unit]
 Description=FWOS bootstrap UI (Management netns)
 Requires=fwos-fwd-setup.service
-After=fwos-fwd-setup.service systemd-tmpfiles-setup.service
+After=fwos-fwd-setup.service systemd-tmpfiles-setup.service fwos-netd.service
+Wants=fwos-netd.service
 ConditionPathExists=/var/lib/fwos/bootstrapped
 
 [Container]

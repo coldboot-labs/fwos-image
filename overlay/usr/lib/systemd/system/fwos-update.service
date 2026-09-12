@@ -1,0 +1,12 @@
+[Unit]
+Description=FWOS Host update program
+After=local-fs.target systemd-tmpfiles-setup.service
+Before=getty.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/fwos-update
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

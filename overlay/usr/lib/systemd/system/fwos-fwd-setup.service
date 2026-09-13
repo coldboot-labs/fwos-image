@@ -1,7 +1,7 @@
 [Unit]
 Description=Create FWOS fwd and mgmt network namespaces
 After=local-fs.target
-Before=network-pre.target sshd.service
+Before=network-pre.target
 
 [Service]
 Type=oneshot

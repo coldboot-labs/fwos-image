@@ -1,7 +1,0 @@
-#!/bin/bash
-while true; do
-  if [ -f /var/lib/fwos/sshd-mgmt ]; then
-    exec /usr/libexec/fwos-sshd-mgmt
-  fi
-  sleep 0.2
-done

@@ -23,9 +23,9 @@ RUN chmod 755 /usr/bin/fwos-fwd-setup \
     && chmod 755 /usr/lib/fwos/addons/cli/usr/bin/fwos \
     && chmod 755 /usr/lib/fwos/addons/ui/usr/bin/fwos-ui \
     && chmod 755 /usr/libexec/fwos-ui-mgmt-wait /usr/libexec/fwos-apply-hostname /usr/libexec/fwos-lan-services-wait \
-    && chmod 755 /usr/libexec/fwos-sshd-mgmt /usr/libexec/fwos-sshd-mgmt-wait \
-    && printf '%%wheel ALL=(root) NOPASSWD: /usr/sbin/ip, /usr/bin/ip, /usr/bin/nsenter\n' > /etc/sudoers.d/fwos-ip \
-    && chmod 440 /etc/sudoers.d/fwos-ip \
+    && ln -sfn /dev/null /etc/systemd/system/sshd.service \
+    && ln -sfn /dev/null /etc/systemd/system/sshd.socket \
+    && ln -sfn /dev/null /etc/systemd/system/sshd@.service \
     && ln -sfn /dev/null /etc/systemd/system/bootc-fetch-apply-updates.timer \
     && ln -sfn /dev/null /etc/systemd/system/bootc-fetch-apply-updates.service \
     && rm -f /usr/lib/systemd/system/default.target.wants/bootc-fetch-apply-updates.timer \

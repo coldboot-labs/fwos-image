@@ -1,4 +1,4 @@
-# Installer ISO (ADR-0017, ADR-0021, ADR-0025): UEFI, whole-disk, self-contained.
+# Installer ISO (ADR-0017, ADR-0036, ADR-0025): UEFI, whole-disk, self-contained.
 # ostreecontainer is added by bootc-image-builder (embedded Host image, no registry).
 [customizations.installer.modules]
 disable = [
@@ -14,7 +14,7 @@ keyboard us
 timezone UTC --utc
 rootpw --lock
 firstboot --disable
-poweroff
+reboot --eject
 %include /tmp/fwos-disk.ks
 
 %pre --erroronfail --interpreter=/bin/bash --log=/tmp/fwos-pre.log
@@ -33,11 +33,29 @@ if [ "$n" -eq 0 ]; then
   echo "FWOS Installer: no writable disk" > /dev/console
   exit 1
 fi
+exec </dev/console >/dev/console 2>/dev/console
+approve_wipe() {
+  local d="$1"
+  local sz
+  sz=$(lsblk -dn -o SIZE "/dev/$d" 2>/dev/null || echo "?")
+  echo "FWOS Installer: /dev/$d ($sz)"
+  echo "The entire disk will be erased and replaced with the Host disk layout"
+  echo "(firmware boot plus one root)."
+  while true; do
+    echo -n "Type yes to wipe /dev/$d: "
+    read -r ans || true
+    ans="${ans%$'\r'}"
+    ans="${ans,,}"
+    if [ "$ans" = yes ]; then
+      return 0
+    fi
+  done
+}
 pick=""
 if [ "$n" -eq 1 ]; then
   pick="${disks[0]}"
+  approve_wipe "$pick"
 else
-  exec </dev/console >/dev/console 2>/dev/console
   echo "FWOS Installer: pick a disk to wipe"
   echo "The chosen disk is always wiped."
   i=1

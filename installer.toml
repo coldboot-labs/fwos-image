@@ -34,45 +34,54 @@ if [ "$n" -eq 0 ]; then
   exit 1
 fi
 exec </dev/console >/dev/console 2>/dev/console
-approve_wipe() {
+print_wipe_notice() {
   local d="$1"
   local sz
   sz=$(lsblk -dn -o SIZE "/dev/$d" 2>/dev/null || echo "?")
   echo "FWOS Installer: /dev/$d ($sz)"
   echo "The entire disk will be erased and replaced with the Host disk layout"
   echo "(firmware boot plus one root)."
-  while true; do
-    echo -n "Type yes to wipe /dev/$d: "
-    read -r ans || true
-    ans="${ans%$'\r'}"
-    ans="${ans,,}"
-    if [ "$ans" = yes ]; then
-      return 0
-    fi
-  done
+}
+read_yes() {
+  local d="$1"
+  local ans
+  echo -n "Type yes to wipe /dev/$d: "
+  read -r ans || true
+  ans="${ans%$'\r'}"
+  ans="${ans,,}"
+  [ "$ans" = yes ]
 }
 pick=""
 if [ "$n" -eq 1 ]; then
   pick="${disks[0]}"
-  approve_wipe "$pick"
-else
-  echo "FWOS Installer: pick a disk to wipe"
-  echo "The chosen disk is always wiped."
-  i=1
-  for d in "${disks[@]}"; do
-    sz=$(lsblk -dn -o SIZE "/dev/$d" 2>/dev/null || echo "?")
-    echo "  $i) /dev/$d ($sz)"
-    i=$((i + 1))
+  print_wipe_notice "$pick"
+  until read_yes "$pick"; do
+    :
   done
-  while true; do
-    echo -n "Disk number: "
-    read -r num || true
-    case "$num" in
-      ''|*[!0-9]*) continue ;;
-    esac
-    if [ "$num" -ge 1 ] && [ "$num" -le "$n" ]; then
-      pick="${disks[$((num - 1))]}"
-      break
+else
+  while [ -z "$pick" ]; do
+    echo "FWOS Installer: pick a disk to wipe"
+    i=1
+    for d in "${disks[@]}"; do
+      sz=$(lsblk -dn -o SIZE "/dev/$d" 2>/dev/null || echo "?")
+      echo "  $i) /dev/$d ($sz)"
+      i=$((i + 1))
+    done
+    while true; do
+      echo -n "Disk number: "
+      read -r num || true
+      num="${num%$'\r'}"
+      case "$num" in
+        ''|*[!0-9]*) continue ;;
+      esac
+      if [ "$num" -ge 1 ] && [ "$num" -le "$n" ]; then
+        break
+      fi
+    done
+    candidate="${disks[$((num - 1))]}"
+    print_wipe_notice "$candidate"
+    if read_yes "$candidate"; then
+      pick="$candidate"
     fi
   done
 fi

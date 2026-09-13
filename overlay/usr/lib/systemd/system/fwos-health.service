@@ -1,0 +1,13 @@
+[Unit]
+Description=FWOS appliance health after Host update
+After=local-fs.target fwos-fwd-setup.service
+Wants=fwos-fwd-setup.service
+
+[Service]
+# oneshot would block default.target while this waits for it
+Type=simple
+ExecStart=/usr/bin/fwos-update health
+Restart=no
+
+[Install]
+WantedBy=multi-user.target

@@ -2,7 +2,7 @@
 Description=Accept HTTPS for the FWOS UI
 DefaultDependencies=no
 After=local-fs.target
-Before=network-pre.target fwos-ui-host.service
+Before=network-pre.target
 
 [Service]
 Type=oneshot

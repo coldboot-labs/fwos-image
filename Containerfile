@@ -22,7 +22,7 @@ RUN chmod 755 /usr/bin/fwos-fwd-setup \
     && chmod 755 /usr/lib/fwos/addons/netd/usr/bin/netd \
     && chmod 755 /usr/lib/fwos/addons/cli/usr/bin/fwos \
     && chmod 755 /usr/lib/fwos/addons/ui/usr/bin/fwos-ui \
-    && chmod 755 /usr/libexec/fwos-ui-mgmt-wait /usr/libexec/fwos-apply-hostname /usr/libexec/fwos-lan-services-wait \
+    && chmod 755 /usr/libexec/fwos-apply-hostname /usr/libexec/fwos-lan-services-wait \
     && ln -sfn /dev/null /etc/systemd/system/sshd.service \
     && ln -sfn /dev/null /etc/systemd/system/sshd.socket \
     && ln -sfn /dev/null /etc/systemd/system/sshd@.service \

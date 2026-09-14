@@ -1,9 +1,8 @@
 [Unit]
-Description=FWOS bootstrap UI (Management netns)
+Description=FWOS UI (Management netns)
 Requires=fwos-fwd-setup.service
 After=fwos-fwd-setup.service systemd-tmpfiles-setup.service fwos-netd.service
 Wants=fwos-netd.service
-ConditionPathExists=/var/lib/fwos/bootstrapped
 
 [Container]
 Rootfs=/usr/lib/fwos/addons/ui:O
@@ -20,3 +19,6 @@ User=0
 
 [Service]
 Restart=on-failure
+
+[Install]
+WantedBy=default.target

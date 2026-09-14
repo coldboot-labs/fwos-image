@@ -34,11 +34,38 @@ if [ "$n" -eq 0 ]; then
   exit 1
 fi
 exec </dev/console >/dev/console 2>/dev/console
+print_partition_list() {
+  local d="$1"
+  local lines="" part base sz fs udev
+  # Sysfs + udev cache only; lsblk FSTYPE probes blkid and Anaconda restarts %pre.
+  for part in /sys/block/"$d"/"$d"*; do
+    [ -e "$part/size" ] || continue
+    base=$(basename "$part")
+    sz=$(lsblk -dn -o SIZE "/dev/$base" 2>/dev/null || echo "?")
+    fs=""
+    if [ -r "$part/dev" ]; then
+      udev="/run/udev/data/b$(cat "$part/dev")"
+      fs=$(sed -n 's/^E:ID_FS_TYPE=//p' "$udev" 2>/dev/null || true)
+    fi
+    if [ -n "$fs" ]; then
+      lines="${lines}  /dev/$base ($sz, $fs)"$'\n'
+    else
+      lines="${lines}  /dev/$base ($sz)"$'\n'
+    fi
+  done
+  if [ -n "$lines" ]; then
+    echo "Existing partitions:"
+    printf '%s' "$lines"
+    echo "These partitions will be overwritten with the Host disk layout."
+  fi
+  return 0
+}
 print_wipe_notice() {
   local d="$1"
   local sz
   sz=$(lsblk -dn -o SIZE "/dev/$d" 2>/dev/null || echo "?")
   echo "FWOS Installer: /dev/$d ($sz)"
+  print_partition_list "$d" || true
   echo "The entire disk will be erased and replaced with the Host disk layout"
   echo "(firmware boot plus one root)."
 }

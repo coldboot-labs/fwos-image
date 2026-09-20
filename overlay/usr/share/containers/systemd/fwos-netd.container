@@ -11,6 +11,10 @@ Network=ns:/run/netns/fwd
 Volume=/var/lib/fwos:/var/lib/fwos
 AddCapability=NET_ADMIN CHOWN NET_RAW NET_BIND_SERVICE
 DropCapability=ALL
+# Podman protects /proc/sys as one read-only path; a child Unmask is ineffective.
+# netd needs only fwd network sysctls. Recheck non-network masks on kernel updates.
+Unmask=/proc/sys
+Mask=/proc/sys/abi:/proc/sys/crypto:/proc/sys/debug:/proc/sys/dev:/proc/sys/fs:/proc/sys/kernel:/proc/sys/sunrpc:/proc/sys/user:/proc/sys/vm:/proc/sys/xen
 PodmanArgs=--runtime=/usr/bin/crun
 SecurityLabelDisable=true
 User=0

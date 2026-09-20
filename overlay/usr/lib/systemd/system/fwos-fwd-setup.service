@@ -1,11 +1,12 @@
 [Unit]
-Description=Create FWOS fwd and mgmt network namespaces
-After=local-fs.target
+Description=Prepare FWOS network namespaces, fixed links, and Traffic NICs
+After=local-fs.target systemd-udev-trigger.service
 Before=network-pre.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecStartPre=/usr/bin/udevadm settle --timeout=30
 ExecStart=/usr/bin/fwos-fwd-setup
 
 [Install]

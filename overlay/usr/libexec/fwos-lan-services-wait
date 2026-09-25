@@ -4,6 +4,35 @@ result=/var/lib/fwos/lan-services-result
 last_generation=
 declare -A applied_digest=()
 umask 077
+
+# Quadlet's READY notification is from conmon, before the daemon has parsed
+# its config. Reject a bad config before disturbing a running service.
+preflight_config() {
+  case "$1" in
+    fwos-kea-dhcp4)
+      timeout 8 podman run --rm --network=ns:/run/netns/fwd \
+        --volume=/var/lib/fwos/kea:/etc/kea:ro \
+        --security-opt=label=disable --cap-drop=all --runtime=/usr/bin/crun --user=0 \
+        --rootfs /usr/lib/fwos/addons/kea:O \
+        /usr/bin/kea-dhcp4 -X -T /etc/kea/kea-dhcp4.conf >/dev/null 2>&1
+      ;;
+    fwos-kea-dhcp6)
+      timeout 8 podman run --rm --network=ns:/run/netns/fwd \
+        --volume=/var/lib/fwos/kea:/etc/kea:ro \
+        --security-opt=label=disable --cap-drop=all --runtime=/usr/bin/crun --user=0 \
+        --rootfs /usr/lib/fwos/addons/kea:O \
+        /usr/bin/kea-dhcp6 -X -T /etc/kea/kea-dhcp6.conf >/dev/null 2>&1
+      ;;
+    fwos-unbound)
+      timeout 8 podman run --rm --network=ns:/run/netns/fwd \
+        --volume=/var/lib/fwos/unbound:/etc/unbound:ro \
+        --security-opt=label=disable --cap-drop=all --runtime=/usr/bin/crun --user=0 \
+        --rootfs /usr/lib/fwos/addons/unbound:O \
+        /usr/sbin/unbound-checkconf /etc/unbound/unbound.conf >/dev/null 2>&1
+      ;;
+  esac
+}
+
 while true; do
   generation=$(cat "$ready" 2>/dev/null)
   if [ -n "$generation" ]; then
@@ -38,12 +67,20 @@ while true; do
           if timeout 2 systemctl is-active --quiet "$name.service"; then
             if [ "$digest" != "${applied_digest[$name]}" ]; then
               changed=true
-              timeout 6 systemctl restart "$name.service" || action_ok=false
+              if preflight_config "$name"; then
+                timeout 6 systemctl restart "$name.service" || action_ok=false
+              else
+                action_ok=false
+              fi
             fi
           else
             changed=true
-            timeout 2 systemctl reset-failed "$name.service" 2>/dev/null || true
-            timeout 6 systemctl start "$name.service" || action_ok=false
+            if preflight_config "$name"; then
+              timeout 2 systemctl reset-failed "$name.service" 2>/dev/null || true
+              timeout 6 systemctl start "$name.service" || action_ok=false
+            else
+              action_ok=false
+            fi
           fi
           if $action_ok && timeout 2 systemctl is-active --quiet "$name.service"; then
             applied_digest[$name]=$digest
@@ -65,24 +102,31 @@ while true; do
         fi
       done
       if $changed && ! $superseded; then
-        # A Type=simple container may briefly be active before Kea rejects its
-        # config. Confirm the post-start state before acknowledging netd.
-        sleep 1
-        for name in fwos-kea-dhcp4 fwos-kea-dhcp6 fwos-unbound; do
-          case "$name" in
-            fwos-kea-dhcp4) config=/var/lib/fwos/kea/kea-dhcp4.conf ;;
-            fwos-kea-dhcp6) config=/var/lib/fwos/kea/kea-dhcp6.conf ;;
-            fwos-unbound) config=/var/lib/fwos/unbound/unbound.conf ;;
-          esac
-          if [ -f "$config" ]; then
-            if ! timeout 2 systemctl is-active --quiet "$name.service"; then
+        # A container may report active before its daemon parses/binds.
+        # Require the same live MainPID across several samples before ACK.
+        declare -A stable_pid=()
+        for sample in 1 2 3; do
+          for name in fwos-kea-dhcp4 fwos-kea-dhcp6 fwos-unbound; do
+            case "$name" in
+              fwos-kea-dhcp4) config=/var/lib/fwos/kea/kea-dhcp4.conf ;;
+              fwos-kea-dhcp6) config=/var/lib/fwos/kea/kea-dhcp6.conf ;;
+              fwos-unbound) config=/var/lib/fwos/unbound/unbound.conf ;;
+            esac
+            if [ -f "$config" ]; then
+              pid=$(timeout 2 systemctl show --property=MainPID --value "$name.service")
+              if ! timeout 2 systemctl is-active --quiet "$name.service" ||
+                 ! [[ "$pid" =~ ^[1-9][0-9]*$ ]] ||
+                 { [ "$sample" -gt 1 ] && [ "$pid" != "${stable_pid[$name]}" ]; }; then
+                all_applied=false
+                failed_service=$name
+              fi
+              stable_pid[$name]=$pid
+            elif timeout 2 systemctl is-active --quiet "$name.service"; then
               all_applied=false
               failed_service=$name
             fi
-          elif timeout 2 systemctl is-active --quiet "$name.service"; then
-            all_applied=false
-            failed_service=$name
-          fi
+          done
+          if [ "$sample" -lt 3 ]; then sleep 1; fi
         done
       fi
       if [ "$(cat "$ready" 2>/dev/null)" != "$generation" ]; then

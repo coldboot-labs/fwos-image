@@ -1,5 +1,5 @@
 [Unit]
-Description=Start Kea and Unbound when netd writes DHCP config
+Description=Start Kea and Unbound when netd accepts LAN services
 Requires=fwos-fwd-setup.service
 After=fwos-fwd-setup.service systemd-tmpfiles-setup.service
 

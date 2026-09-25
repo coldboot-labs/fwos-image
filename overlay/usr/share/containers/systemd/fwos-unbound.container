@@ -3,6 +3,7 @@ Description=FWOS Unbound
 Requires=fwos-fwd-setup.service
 After=fwos-fwd-setup.service systemd-tmpfiles-setup.service
 ConditionPathExists=/var/lib/fwos/unbound/unbound.conf
+ConditionPathExists=/var/lib/fwos/lan-services-ready
 
 [Container]
 Rootfs=/usr/lib/fwos/addons/unbound:O

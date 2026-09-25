@@ -1,10 +1,30 @@
 #!/bin/bash
+ready=/var/lib/fwos/lan-services-ready
+last_inode=
 while true; do
-  if [ -f /var/lib/fwos/kea/kea-dhcp4.conf ]; then
-    sleep 1
-    systemctl reset-failed fwos-kea-dhcp4.service fwos-kea-dhcp6.service fwos-unbound.service 2>/dev/null || true
-    systemctl start fwos-kea-dhcp4.service fwos-kea-dhcp6.service fwos-unbound.service
-    exit 0
+  if [ -f "$ready" ]; then
+    inode=$(stat -c %i "$ready" 2>/dev/null)
+    if [ -n "$inode" ] && [ "$inode" != "$last_inode" ]; then
+      all_started=true
+      for name in fwos-kea-dhcp4 fwos-kea-dhcp6 fwos-unbound; do
+        case "$name" in
+          fwos-kea-dhcp4) config=/var/lib/fwos/kea/kea-dhcp4.conf ;;
+          fwos-kea-dhcp6) config=/var/lib/fwos/kea/kea-dhcp6.conf ;;
+          fwos-unbound) config=/var/lib/fwos/unbound/unbound.conf ;;
+        esac
+        if [ -f "$config" ]; then
+          systemctl reset-failed "$name.service" 2>/dev/null || true
+          systemctl start "$name.service" || all_started=false
+        fi
+      done
+      if $all_started; then
+        last_inode=$inode
+      else
+        sleep 1
+      fi
+    fi
+  else
+    last_inode=
   fi
   sleep 0.2
 done

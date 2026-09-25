@@ -1,8 +1,8 @@
 [Unit]
-Description=Start Kea DHCPv6 when netd writes its config
+Description=Start Kea DHCPv6 when netd accepts LAN services
 
 [Path]
-PathExists=/var/lib/fwos/kea/kea-dhcp6.conf
+PathChanged=/var/lib/fwos/lan-services-ready
 
 [Install]
 WantedBy=multi-user.target

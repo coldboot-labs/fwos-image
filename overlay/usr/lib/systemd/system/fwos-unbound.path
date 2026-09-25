@@ -1,8 +1,8 @@
 [Unit]
-Description=Start Unbound when netd writes its config
+Description=Start Unbound when netd accepts LAN services
 
 [Path]
-PathExists=/var/lib/fwos/unbound/unbound.conf
+PathChanged=/var/lib/fwos/lan-services-ready
 
 [Install]
 WantedBy=multi-user.target

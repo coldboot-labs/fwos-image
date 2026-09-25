@@ -1,8 +1,0 @@
-[Unit]
-Description=Start Kea DHCPv4 when netd accepts LAN services
-
-[Path]
-PathChanged=/var/lib/fwos/lan-services-ready
-
-[Install]
-WantedBy=multi-user.target

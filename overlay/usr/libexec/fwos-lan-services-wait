@@ -1,30 +1,110 @@
 #!/bin/bash
 ready=/var/lib/fwos/lan-services-ready
-last_inode=
+result=/var/lib/fwos/lan-services-result
+last_generation=
+declare -A applied_digest=()
+umask 077
 while true; do
-  if [ -f "$ready" ]; then
-    inode=$(stat -c %i "$ready" 2>/dev/null)
-    if [ -n "$inode" ] && [ "$inode" != "$last_inode" ]; then
-      all_started=true
+  generation=$(cat "$ready" 2>/dev/null)
+  if [ -n "$generation" ]; then
+    if [ "$generation" != "$last_generation" ]; then
+      all_applied=true
+      failed_service=
+      superseded=false
+      changed=false
       for name in fwos-kea-dhcp4 fwos-kea-dhcp6 fwos-unbound; do
         case "$name" in
           fwos-kea-dhcp4) config=/var/lib/fwos/kea/kea-dhcp4.conf ;;
           fwos-kea-dhcp6) config=/var/lib/fwos/kea/kea-dhcp6.conf ;;
           fwos-unbound) config=/var/lib/fwos/unbound/unbound.conf ;;
         esac
+        if [ "$(cat "$ready" 2>/dev/null)" != "$generation" ]; then
+          superseded=true
+          break
+        fi
         if [ -f "$config" ]; then
-          systemctl reset-failed "$name.service" 2>/dev/null || true
-          systemctl start "$name.service" || all_started=false
+          digest=$(sha256sum "$config" 2>/dev/null)
+          digest=${digest%% *}
+          if [ -z "$digest" ]; then
+            all_applied=false
+            failed_service=$name
+            continue
+          fi
+          if [ "$(cat "$ready" 2>/dev/null)" != "$generation" ]; then
+            superseded=true
+            break
+          fi
+          action_ok=true
+          if timeout 2 systemctl is-active --quiet "$name.service"; then
+            if [ "$digest" != "${applied_digest[$name]}" ]; then
+              changed=true
+              timeout 6 systemctl restart "$name.service" || action_ok=false
+            fi
+          else
+            changed=true
+            timeout 2 systemctl reset-failed "$name.service" 2>/dev/null || true
+            timeout 6 systemctl start "$name.service" || action_ok=false
+          fi
+          if $action_ok && timeout 2 systemctl is-active --quiet "$name.service"; then
+            applied_digest[$name]=$digest
+          else
+            all_applied=false
+            failed_service=$name
+          fi
+        elif timeout 2 systemctl is-active --quiet "$name.service"; then
+          changed=true
+          if timeout 6 systemctl stop "$name.service" &&
+             ! timeout 2 systemctl is-active --quiet "$name.service"; then
+            unset 'applied_digest[$name]'
+          else
+            all_applied=false
+            failed_service=$name
+          fi
+        else
+          unset 'applied_digest[$name]'
         fi
       done
-      if $all_started; then
-        last_inode=$inode
-      else
+      if $changed && ! $superseded; then
+        # A Type=simple container may briefly be active before Kea rejects its
+        # config. Confirm the post-start state before acknowledging netd.
         sleep 1
+        for name in fwos-kea-dhcp4 fwos-kea-dhcp6 fwos-unbound; do
+          case "$name" in
+            fwos-kea-dhcp4) config=/var/lib/fwos/kea/kea-dhcp4.conf ;;
+            fwos-kea-dhcp6) config=/var/lib/fwos/kea/kea-dhcp6.conf ;;
+            fwos-unbound) config=/var/lib/fwos/unbound/unbound.conf ;;
+          esac
+          if [ -f "$config" ]; then
+            if ! timeout 2 systemctl is-active --quiet "$name.service"; then
+              all_applied=false
+              failed_service=$name
+            fi
+          elif timeout 2 systemctl is-active --quiet "$name.service"; then
+            all_applied=false
+            failed_service=$name
+          fi
+        done
+      fi
+      if [ "$(cat "$ready" 2>/dev/null)" != "$generation" ]; then
+        superseded=true
+      fi
+      if ! $superseded; then
+        status=ok
+        if ! $all_applied; then
+          status="failed:$failed_service"
+        fi
+        temporary="${result}.$$"
+        if printf '%s %s\n' "$generation" "$status" > "$temporary" &&
+           mv -f -- "$temporary" "$result"; then
+          last_generation=$generation
+        else
+          rm -f -- "$temporary"
+          sleep 1
+        fi
       fi
     fi
   else
-    last_inode=
+    last_generation=
   fi
   sleep 0.2
 done

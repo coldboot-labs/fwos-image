@@ -1,0 +1,12 @@
+[Unit]
+Description=Restore the pre-update network after a Host image rollback
+After=local-fs.target systemd-tmpfiles-setup.service
+Before=fwos-netd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/fwos-update restore-check
+
+[Install]
+WantedBy=multi-user.target

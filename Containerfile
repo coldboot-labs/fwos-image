@@ -1,26 +1,23 @@
 FROM localhost/fwos-fwd-setup:dev AS fwd-setup
 FROM localhost/fwos-netd:dev AS netd
-FROM localhost/fwos-cli:dev AS cli
 FROM localhost/fwos-ui:dev AS ui
 FROM localhost/fwos-kea:dev AS kea
 FROM localhost/fwos-unbound:dev AS unbound
 FROM quay.io/fedora/fedora-bootc:44
 
 COPY --from=fwd-setup /usr/bin/fwos-fwd-setup /usr/bin/fwos-fwd-setup
-COPY --from=fwd-setup /usr/bin/fwos /usr/bin/fwos
+COPY --from=fwd-setup /usr/bin/fwos-console /usr/bin/fwos-console
 COPY --from=fwd-setup /usr/bin/fwos-update /usr/bin/fwos-update
 COPY --from=netd / /usr/lib/fwos/addons/netd
-COPY --from=cli / /usr/lib/fwos/addons/cli
 COPY --from=ui / /usr/lib/fwos/addons/ui
 COPY --from=kea / /usr/lib/fwos/addons/kea
 COPY --from=unbound / /usr/lib/fwos/addons/unbound
 COPY overlay/usr/ /usr/
 
 RUN chmod 755 /usr/bin/fwos-fwd-setup \
-    && chmod 755 /usr/bin/fwos \
+    && chmod 755 /usr/bin/fwos-console \
     && chmod 755 /usr/bin/fwos-update \
     && chmod 755 /usr/lib/fwos/addons/netd/usr/bin/netd \
-    && chmod 755 /usr/lib/fwos/addons/cli/usr/bin/fwos \
     && chmod 755 /usr/lib/fwos/addons/ui/usr/bin/fwos-ui \
     && chmod 755 /usr/libexec/fwos-apply-hostname /usr/libexec/fwos-lan-services-wait \
     && ln -sfn /dev/null /etc/systemd/system/sshd.service \
